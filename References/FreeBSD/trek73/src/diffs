@@ -1,0 +1,577 @@
+Index: cmds1.c
+*** /tmp/,RCSt1a02785	Fri Feb 12 08:51:14 1988
+--- cmds1.c	Wed Dec 23 11:05:00 1987
+***************
+*** 275,281
+  	(void) Gets(buf1, sizeof(buf1));
+  	if (buf1[0] == NULL)
+  		return 0;
+! 	printf("   to [0-360] ");
+  	(void) Gets(buf2, sizeof(buf2));
+  	if (buf2[0] == NULL)
+  		return 0;
+
+--- 275,281 -----
+  	(void) Gets(buf1, sizeof(buf1));
+  	if (buf1[0] == NULL)
+  		return 0;
+! 	printf("   to relative bearing [0-360] ");
+  	(void) Gets(buf2, sizeof(buf2));
+  	if (buf2[0] == NULL)
+  		return 0;
+***************
+*** 325,331
+  	(void) Gets(buf1, sizeof(buf1));
+  	if (buf1[0] == NULL)
+  		return 0;
+! 	printf("   to [0-360] ");
+  	(void) Gets(buf2, sizeof(buf2));
+  	if (buf2[0] == NULL)
+  		return 0;
+
+--- 325,331 -----
+  	(void) Gets(buf1, sizeof(buf1));
+  	if (buf1[0] == NULL)
+  		return 0;
+! 	printf("   to relative bearing [0-360] ");
+  	(void) Gets(buf2, sizeof(buf2));
+  	if (buf2[0] == NULL)
+  		return 0;
+Index: cmds2.c
+*** /tmp/,RCSt1a02792	Fri Feb 12 08:51:16 1988
+--- cmds2.c	Mon Dec 21 16:12:56 1987
+***************
+*** 233,239
+  	}
+  	map[vpitch][hpitch] = '+';
+  	for (lp = &head; lp != tail; lp = lp->fwd) {
+! 		if (lp->data.sp == sp)
+  			continue;
+  		if (lp->type == I_SHIP) {
+  			sp1 = lp->data.sp;
+
+--- 233,239 -----
+  	}
+  	map[vpitch][hpitch] = '+';
+  	for (lp = &head; lp != tail; lp = lp->fwd) {
+! 		if ((lp->type == I_UNDEFINED) || (lp->data.sp == sp))
+  			continue;
+  		if (lp->type == I_SHIP) {
+  			sp1 = lp->data.sp;
+Index: cmds4.c
+*** /tmp/,RCSt1a02806	Fri Feb 12 08:51:21 1988
+--- cmds4.c	Tue Dec 29 14:38:54 1987
+***************
+*** 311,317
+  	}
+  	printf("Computer:   Self-destruct order ... ");
+  	(void) fflush(stdout);
+! 	sleep(4);
+  	if (sp->delay > 4.) {
+  		puts("aborted.  Destruct order aborted.");
+  		sp->delay = 10000.;
+
+--- 311,317 -----
+  	}
+  	printf("Computer:   Self-destruct order ... ");
+  	(void) fflush(stdout);
+! 	(void) sleep(4);
+  	if (sp->delay > 4.) {
+  		puts("aborted.  Destruct order aborted.");
+  		sp->delay = 10000.;
+Index: externs.h
+*** /tmp/,RCSt1a02853	Fri Feb 12 08:51:40 1988
+--- externs.h	Tue Dec 29 13:52:24 1987
+***************
+*** 30,35
+     return int plus any extern variable declarations    */
+  extern char	*getenv(), *malloc();
+  extern long	time();
+  extern unsigned	sleep(), alarm();
+  extern void	exit(), free(), perror();
+  #ifdef SYSV
+
+--- 30,38 -----
+     return int plus any extern variable declarations    */
+  extern char	*getenv(), *malloc();
+  extern long	time();
++ #ifdef BSD
++ extern int	sleep(), alarm();
++ #else
+  extern unsigned	sleep(), alarm();
+  #endif
+  extern void	exit(), free(), perror();
+***************
+*** 31,36
+  extern char	*getenv(), *malloc();
+  extern long	time();
+  extern unsigned	sleep(), alarm();
+  extern void	exit(), free(), perror();
+  #ifdef SYSV
+  extern void	srand();
+
+--- 34,40 -----
+  extern int	sleep(), alarm();
+  #else
+  extern unsigned	sleep(), alarm();
++ #endif
+  extern void	exit(), free(), perror();
+  #ifdef SYSV
+  extern void	srand();
+Index: firing.c
+*** /tmp/,RCSt1a02870	Fri Feb 12 08:51:43 1988
+--- firing.c	Wed Dec 23 13:57:31 1987
+***************
+*** 51,58
+  	 * Put in j the relative bearing of the phasers relative to the ship
+  	 * Put in bear the absolute direction the phasers are pointing
+  	 */
+! 	bear = sp->phasers[i].bearing + sp->course;
+! 	j = rectify(sp->phasers[i].bearing);
+  	if (betw(j, sp->p_blind_left, sp->p_blind_right)
+  	    && !is_dead(sp, S_ENG))
+  		return 0;
+
+--- 51,66 -----
+  	 * Put in j the relative bearing of the phasers relative to the ship
+  	 * Put in bear the absolute direction the phasers are pointing
+  	 */
+! 	if (target == NULL) {
+! 		bear = sp->phasers[i].bearing + sp->course;
+! 		j = rectify(sp->phasers[i].bearing);
+! 	} else {
+! 		bear = bearing(sp->x,
+! 		    (cantsee(target)) ? target->position.x : target->x,
+! 		    sp->y,
+! 		    (cantsee(target)) ? target->position.y : target->y);
+! 		j = rectify(bear - sp->course);
+! 	}
+  	if (betw(j, sp->p_blind_left, sp->p_blind_right)
+  	    && !is_dead(sp, S_ENG))
+  		return 0;
+***************
+*** 164,171
+  	 * Put in j the relative bearing of the tubes to the ship
+  	 * Put in bear the absolute direction the tubes are pointing
+  	 */
+! 	bear = sp->tubes[i].bearing + sp->course;
+! 	j = rectify(sp->tubes[i].bearing);
+  	if (betw(j, sp->t_blind_left, sp->t_blind_right) && !is_dead(sp, S_ENG))
+  		return 0;
+  	if (target != NULL && (is_dead(target, S_DEAD))) {
+
+--- 172,187 -----
+  	 * Put in j the relative bearing of the tubes to the ship
+  	 * Put in bear the absolute direction the tubes are pointing
+  	 */
+! 	if (target == NULL) {
+! 		bear = sp->phasers[i].bearing + sp->course;
+! 		j = rectify(sp->phasers[i].bearing);
+! 	} else {
+! 		bear = bearing(sp->x,
+! 		    (cantsee(target)) ? target->position.x : target->x,
+! 		    sp->y,
+! 		    (cantsee(target)) ? target->position.y : target->y);
+! 		j = rectify(bear - sp->course);
+! 	}
+  	if (betw(j, sp->t_blind_left, sp->t_blind_right) && !is_dead(sp, S_ENG))
+  		return 0;
+  	if (target != NULL && (is_dead(target, S_DEAD))) {
+Index: init.c
+*** /tmp/,RCSt1a02891	Fri Feb 12 08:51:51 1988
+--- init.c	Mon Dec 21 08:22:05 1987
+***************
+*** 134,140
+  		shipnum = i;
+  	} else
+  		shipnum = randm(MAXESHIPS);
+! 	for (loop = 0; loop < shipnum; loop++);
+  		slots[loop] = 'X';
+  	offset = !silly;
+  	if (racename[0] == '\0') {
+
+--- 134,140 -----
+  		shipnum = i;
+  	} else
+  		shipnum = randm(MAXESHIPS);
+! 	for (loop = 0; loop < shipnum; loop++)
+  		slots[loop] = 'X';
+  	offset = !silly;
+  	if (racename[0] == '\0') {
+Index: main.c
+*** /tmp/,RCSt1a02899	Fri Feb 12 08:51:54 1988
+--- main.c	Wed Dec 30 20:50:55 1987
+***************
+*** 24,32
+   *
+   * Corrected, Completed, and Enhanced by
+   *	Jeff Okamoto	(hpccc!okamoto)
+!  *			(hpccc!okamoto@hplabs.hp.com)
+!  *	Peter Yee	(ucbvax!yee)
+!  *			(yee@ucbarpa.berkeley.edu)
+   *	Matt Dillon	(ucbvax!dillon)
+   *			(dillon@ucbvax.berkeley.edu)
+   *	Dave Sharnoff	(ucbvax!ucbcory!muir)
+
+--- 24,32 -----
+   *
+   * Corrected, Completed, and Enhanced by
+   *	Jeff Okamoto	(hpccc!okamoto)
+!  *			(okamoto%hpccc@hplabs.hp.com)
+!  *	Peter Yee	(ames!yee)
+!  *			(yee@ames.arc.nasa.gov)
+   *	Matt Dillon	(ucbvax!dillon)
+   *			(dillon@ucbvax.berkeley.edu)
+   *	Dave Sharnoff	(ucbvax!ucbcory!muir)
+***************
+*** 33,40
+   *			(muir@cogsci.berkeley.edu)
+   *	Joel Duisman
+   *	    and
+!  *	Roger J. Noe    (uniq!rjnoe)
+!  *			(ihnp4!uniq!rjnoe@berkeley.edu)
+   *
+   * Main Loop
+   *
+
+--- 33,39 -----
+   *			(muir@cogsci.berkeley.edu)
+   *	Joel Duisman
+   *	    and
+!  *	Roger J. Noe    (hplabs!uniq!uniqvax!rjnoe)
+   *
+   * Main Loop
+   *
+***************
+*** 103,109
+  next:
+  		for (loop = 0; loop < HIGHSHUTUP; loop++)
+  			shutup[loop] = 0;
+! 		fflush(stdin);
+  		printf("\n%s: Code [1-%d] ", captain, high_command);
+  		fflush(stdout);
+  		(void) alarm((unsigned) time_delay);
+
+--- 102,108 -----
+  next:
+  		for (loop = 0; loop < HIGHSHUTUP; loop++)
+  			shutup[loop] = 0;
+! 		(void) fflush(stdin);
+  		printf("\n%s: Code [1-%d] ", captain, high_command);
+  		(void) fflush(stdout);
+  		Input[0] = '\0';
+***************
+*** 105,111
+  			shutup[loop] = 0;
+  		fflush(stdin);
+  		printf("\n%s: Code [1-%d] ", captain, high_command);
+! 		fflush(stdout);
+  		(void) alarm((unsigned) time_delay);
+  #ifdef PARSER
+  		(void) Gets(Input, sizeof(Input));
+
+--- 104,111 -----
+  			shutup[loop] = 0;
+  		(void) fflush(stdin);
+  		printf("\n%s: Code [1-%d] ", captain, high_command);
+! 		(void) fflush(stdout);
+! 		Input[0] = '\0';
+  		(void) alarm((unsigned) time_delay);
+  #ifdef PARSER
+  		(void) Gets(Input, sizeof(Input));
+***************
+*** 176,182
+  
+  	timeleft = alarm(0);
+  	(void) signal(SIGINT, SIG_IGN);
+! 	puts("\n\nDo you really wish to stop now?  Answer yes or no:");
+  	(void) Gets(answer, sizeof(answer));
+  	if(answer[0] == NULL || answer[0] == 'y' || answer[0] == 'Y')
+  		exit(0);
+
+--- 176,182 -----
+  
+  	timeleft = alarm(0);
+  	(void) signal(SIGINT, SIG_IGN);
+! 	printf("\n\nDo you really wish to stop now?  Answer yes or no:");
+  	(void) Gets(answer, sizeof(answer));
+  	if(answer[0] == NULL || answer[0] == 'y' || answer[0] == 'Y')
+  		exit(0);
+Index: misc.c
+*** /tmp/,RCSt1a02909	Fri Feb 12 08:51:57 1988
+--- misc.c	Wed Dec 23 11:20:28 1987
+***************
+*** 61,67
+  	int	first;
+  
+  	argnum = parsit(buf, &argp);
+! 	first = strlen(argp[0]);
+  	if (argnum && first)
+  		for (cp = &cmds[0]; cp->routine != NULL; cp++)
+  			if (!strncmp(argp[0], cp->code_num, first))
+
+--- 61,67 -----
+  	int	first;
+  
+  	argnum = parsit(buf, &argp);
+! 	first = argp[0] ? strlen(argp[0]) : 0;
+  	if (argnum && first)
+  		for (cp = &cmds[0]; cp->routine != NULL; cp++)
+  			if (!strncmp(argp[0], cp->code_num, first))
+***************
+*** 214,220
+  			bear = sp->phasers[i].bearing + sp->course;
+  			k = sp->phasers[i].bearing;
+  		} else {
+! 			bear = bearing(sp->x, target->x, sp->y, target->y);
+  			k = bear - sp->course;
+  		}
+  		k = rectify(k);
+
+--- 214,223 -----
+  			bear = sp->phasers[i].bearing + sp->course;
+  			k = sp->phasers[i].bearing;
+  		} else {
+! 			bear = bearing(sp->x,
+! 			    (cantsee(target)) ? target->position.x : target->x,
+! 			    sp->y,
+! 			    (cantsee(target)) ? target->position.y : target->y);
+  			k = bear - sp->course;
+  		}
+  		k = rectify(k);
+***************
+*** 266,272
+  			bear = sp->tubes[i].bearing + sp->course;
+  			k = sp->tubes[i].bearing;
+  		} else {
+! 			bear = bearing(sp->x, target->x, sp->y, target->y);
+  			k = bear - sp->course;
+  		}
+  		k = rectify(k);
+
+--- 269,278 -----
+  			bear = sp->tubes[i].bearing + sp->course;
+  			k = sp->tubes[i].bearing;
+  		} else {
+! 			bear = bearing(sp->x,
+! 			    (cantsee(target)) ? target->position.x : target->x,
+! 			    sp->y,
+! 			    (cantsee(target)) ? target->position.y : target->y);
+  			k = bear - sp->course;
+  		}
+  		k = rectify(k);
+Index: moveships.c
+*** /tmp/,RCSt1a02921	Fri Feb 12 08:52:03 1988
+--- moveships.c	Wed Dec 23 07:54:10 1987
+***************
+*** 214,220
+  				/*
+  				 * maximum degrees turned in one turn
+  				 */
+! 				k = ((sp->max_speed + 2.0 - warp)
+  				    * sp->deg_turn * segment);
+  				/* If you have no warp drive, you're less
+  				 * maneuverable
+
+--- 214,220 -----
+  				/*
+  				 * maximum degrees turned in one turn
+  				 */
+! 				k = ((sp->max_speed + 2.0 - fabs(warp))
+  				    * sp->deg_turn * segment);
+  				/* If you have no warp drive, you're less
+  				 * maneuverable
+Index: save.c
+*** /tmp/,RCSt1a02943	Fri Feb 12 08:52:14 1988
+--- save.c	Wed Dec 30 17:53:41 1987
+***************
+*** 92,98
+  	    if (c == 'n' || c == 'N' || c == 'y' || c == 'Y')
+  		break;
+  	    else
+! 		printf("\nPlease answer Yes or No");
+  	}
+  	if (c == 'y' || c == 'Y')
+  	{
+
+--- 92,98 -----
+  	    if (c == 'n' || c == 'N' || c == 'y' || c == 'Y')
+  		break;
+  	    else
+! 		printf("\nPlease answer Yes or No\n");
+  	}
+  	if (c == 'y' || c == 'Y')
+  	{
+***************
+*** 302,305
+      }
+      return read_size;
+  }
+- 
+
+--- 302,304 -----
+      }
+      return read_size;
+  }
+Index: special.c
+*** /tmp/,RCSt1a02957	Fri Feb 12 08:52:23 1988
+--- special.c	Tue Dec 29 14:40:42 1987
+***************
+*** 69,75
+  		 * fast or if we're close enough, or if his shields
+  		 * are up, we'll spot him.
+  		 */
+! 		if ((fabs(sp->target->warp) > 1.0) || (range < 200))
+  			defenseless = 6;
+  		else
+  			for (loop = 0; loop < SHIELDS; loop++)
+
+--- 69,75 -----
+  		 * fast or if we're close enough, or if his shields
+  		 * are up, we'll spot him.
+  		 */
+! 		if (sp->target && ((fabs(sp->target->warp) > 1.0) || (range < 200)))
+  			defenseless = 6;
+  		else
+  			if (sp->target)
+***************
+*** 72,80
+  		if ((fabs(sp->target->warp) > 1.0) || (range < 200))
+  			defenseless = 6;
+  		else
+! 			for (loop = 0; loop < SHIELDS; loop++)
+! 				if (sp->target->shields[loop].drain)
+! 					defenseless = 6;
+  	}
+  
+  	/*
+
+--- 72,81 -----
+  		if (sp->target && ((fabs(sp->target->warp) > 1.0) || (range < 200)))
+  			defenseless = 6;
+  		else
+! 			if (sp->target)
+! 				for (loop = 0; loop < SHIELDS; loop++)
+! 					if (sp->target->shields[loop].drain)
+! 						defenseless = 6;
+  	}
+  
+  	/*
+***************
+*** 119,125
+  	case 4:
+  	case 5:
+  		/* Begin to get suspicious */
+! 		if (fabs(sp->target->warp) > 2.0)
+  			corbomite = 6;
+  		break;
+  	}
+
+--- 120,126 -----
+  	case 4:
+  	case 5:
+  		/* Begin to get suspicious */
+! 		if (sp->target && fabs(sp->target->warp) > 2.0)
+  			corbomite = 6;
+  		break;
+  	}
+***************
+*** 173,179
+  	case 5:
+  		/* Begin checking surrender conditions */
+  		for (loop = 0; loop < SHIELDS; loop++)
+! 			if (sp->target->shields[loop].drain)
+  				break;
+  		if (loop < SHIELDS)
+  			break;
+
+--- 174,180 -----
+  	case 5:
+  		/* Begin checking surrender conditions */
+  		for (loop = 0; loop < SHIELDS; loop++)
+! 			if (sp->target && sp->target->shields[loop].drain)
+  				break;
+  		if (loop < SHIELDS)
+  			break;
+***************
+*** 179,185
+  			break;
+  		if (range <= 1400)
+  			sp->newwarp = 1.0;
+! 		if ((range <= 1000) && (fabs(sp->target->warp) <= 1.0)) {
+  			fed->status[S_SURRENDER] = 100;
+  			final(FIN_F_SURRENDER);
+  		}
+
+--- 180,186 -----
+  			break;
+  		if (range <= 1400)
+  			sp->newwarp = 1.0;
+! 		if ((range <= 1000) && (sp->target && fabs(sp->target->warp) <= 1.0)) {
+  			fed->status[S_SURRENDER] = 100;
+  			final(FIN_F_SURRENDER);
+  		}
+Index: subs.c
+*** /tmp/,RCSt1a02971	Fri Feb 12 08:52:32 1988
+--- subs.c	Wed Dec 23 13:57:58 1987
+***************
+*** 175,180
+  	i = rangefind(sp->x, x, sp->y, y);
+  	if (i < MAX_PHASER_RANGE) {
+  		bear = bearing(sp->x, x, sp->y, y);
+  		spread = rectify(true_bear - bear);
+  		/*
+  		 * Check if a target is within the phaser spread
+
+--- 175,181 -----
+  	i = rangefind(sp->x, x, sp->y, y);
+  	if (i < MAX_PHASER_RANGE) {
+  		bear = bearing(sp->x, x, sp->y, y);
++ #ifdef TEST
+  		spread = rectify(true_bear - bear);
+  		/*
+  		 * Check if a target is within the phaser spread
+***************
+*** 179,184
+  		/*
+  		 * Check if a target is within the phaser spread
+  		 */
+  		if (betw(spread, sp->p_spread, 360-spread))
+  			return 0;
+  		d1 = 1.0 - (float)i/MAX_PHASER_RANGE;
+
+--- 180,188 -----
+  		/*
+  		 * Check if a target is within the phaser spread
+  		 */
++ printf("Bearing to target: %f\n", bear);
++ printf("Phaser bank spread: %d\n", sp->p_spread);
++ printf("Variable spread: %f\n", spread);
+  		if (betw(spread, sp->p_spread, 360-spread))
+  			return 0;
+  #else
+***************
+*** 181,186
+  		 */
+  		if (betw(spread, sp->p_spread, 360-spread))
+  			return 0;
+  		d1 = 1.0 - (float)i/MAX_PHASER_RANGE;
+  		d2 = (float)bank->load * sqrt(d1) * sp->p_percent / 100;
+  		/* XXXX */
+
+--- 185,199 -----
+  printf("Variable spread: %f\n", spread);
+  		if (betw(spread, sp->p_spread, 360-spread))
+  			return 0;
++ #else
++ 		spread = min(rectify(bear - true_bear),
++ 		    rectify(true_bear - bear));
++ printf("\t\tBearing to target: %f\n", bear);
++ printf("\t\tDelta in degrees = %f\n", spread);
++ printf("\t\tPhaser bank spread: %d\n", sp->p_spread);
++ 		if (spread > sp->p_spread)
++ 			return 0;
++ #endif
+  		d1 = 1.0 - (float)i/MAX_PHASER_RANGE;
+  		d2 = (float)bank->load * sqrt(d1) * sp->p_percent / 100;
+  		/* XXXX */

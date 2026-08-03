@@ -1,0 +1,81 @@
+Captain's Log, Stardate 8509.13:
+	Initial release of TREK73.
+
+Captain's Log, Stardate 8510.22:
+	Additions:
+		Different ship classes
+	Fixes:
+		Energy distribution bug
+		Movement of ships bug
+		Detonation timers now in seconds, not granules.
+
+Captain's Log, Stardate 8511.29:
+	Additions:
+		Limited damage of systems
+
+Captain's Log, Stardate 8602.26:
+	Additions:
+		Separate names for captains of different races
+		Time delay flag with fixes
+		Cloaking device (currently for Romulans only, no strategy)
+		Command line option setting and overrides
+		Blind firing angles for each class
+	Fixes:
+		Enemy strategy partially fixed (What a crock!)
+		Surrendering bugs
+
+Captain's Log, Stardate 8603.12
+	Sent beta-test to ihnp4!riccb!rjnoe (mistakenly, no doubt)
+	Fixes:
+		Corrected stupid mistake in Gets()
+
+Captain's Log, Stardate 8603.13
+	Additions:
+		Ability to scan engineering sections and probes
+	Fixes:
+		Tightened granularity by factor of 2
+		Recloaking delay.
+
+Captain's Log, Stardate 8603.18
+	Additions:
+		Weapons firing delays
+		Added trace option
+	Fixes:
+		Tightened granularity by another factor of 2
+		Put all enemy race information into one huge structure.
+
+Captain's Log, Stardate 8603.26
+	Fixes:
+		Changed energy in ship structure to floats
+		Removed all hard-coded constants
+
+Captain's Log, Stardate 8604.02
+	Fixes:
+		Many ints are now floats.  This causes severe headaches.
+
+Captain's Log, Stardate 8605.[15-19]
+	Additions:
+		Added fixes from Roger Noe.  By hand.
+	Fixes:
+		Moved initialization from main.c into init.c
+
+Captin's Log, Stardate 8608.02
+	Additions:
+		Save/restore game option
+
+Captain's Log, Stardate 8608.17
+	Additions:
+		Designer ships
+
+Captain's Log, Stardate 8612.11
+	Released TREK73 again
+
+Captain's Log, Stardate 8704.14
+	Additions:
+		English parser
+
+Captain's Log, Stardate 8704.27
+	Sent beta-test to Roger Noe
+
+Captain's Log, Stardate 8712.17
+	Version 4.0 released to comp.sources.games

@@ -1,0 +1,19 @@
+Things to do to TREK73 (Descending priority)
+
+Add X interface
+Find out how to make it run correctly on slow ttys
+More strategies
+Add M5 control
+Implement transporter and boarding parties
+Add multi-user
+Add strategic battle
+
+Things that will probably never be done
+Implement space mines
+Implement shuttle craft
+
+Things that are done
+Fix strategy -- if not enough energy, decloak 
+DYO Ships
+Add save game
+Add parser

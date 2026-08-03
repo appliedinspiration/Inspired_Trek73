@@ -1,0 +1,513 @@
+From daemon Sun Apr 12 01:07 PST 1987
+Received: from miro.Berkeley.EDU ([128.32.130.17]) by hplabs.HP.COM with TCP ; Sat, 11 Apr 87 21:51:43 pst
+Received: by miro.Berkeley.EDU (5.51/1.14)
+	id AA03508; Sat, 11 Apr 87 09:55:27 PST
+Date: Sat, 11 Apr 87 09:55:27 PST
+From: hplabs!okamoto%miro@BERKELEY.EDU (Jeff Okamoto)
+Message-Id: <8704111755.AA03508@miro.Berkeley.EDU>
+To: hpccc!okamoto@hplabs.hp.com
+Subject: parse.shar
+Status: R
+
+#! /bin/sh
+# This is a shell archive, meaning:
+# 1. Remove everything above the #! /bin/sh line.
+# 2. Save the resulting text in a file.
+# 3. Execute the file with /bin/sh (not csh) to create the files:
+#	Makefile
+#	command.l
+#	grammar.y
+#	main.c
+#	union.h
+# This archive created: Sat Apr 11 09:54:49 1987
+# By:	Jeff Okamoto ()
+export PATH; PATH=/bin:$PATH
+if test -f 'Makefile'
+then
+	echo shar: will not over-write existing file "'Makefile'"
+else
+cat << \SHAR_EOF > 'Makefile'
+CFLAGS = -g -DYYDEBUG
+#CFLAGS = -g
+
+all: main.o y.tab.o
+	cc $(CFLAGS) main.o y.tab.o -ll -ly
+
+y.tab.o: y.tab.h union.h
+	cc -c $(CFLAGS) y.tab.c
+
+y.tab.h: grammar.y lex.yy.c union.h
+	yacc -d grammar.y
+
+lex.yy.c: command.l union.h
+	lex command.l
+
+clean:
+	/bin/rm -f a.out y.tab.o y.tab.h y.tab.c lex.yy.c main.o make.out y.output
+SHAR_EOF
+fi # end of overwriting check
+if test -f 'command.l'
+then
+	echo shar: will not over-write existing file "'command.l'"
+else
+cat << \SHAR_EOF > 'command.l'
+%{
+	double	atof();
+	char	Input[BUFSIZ];
+	char	*Inptr;
+%}
+
+WS	[ \t]*
+
+%%
+[+-]?[0-9.]+	{ yylval.dval = atof(yytext); return(NUMBER); }
+abort		{ return(ABORT); }
+all		{ return(ALL); }
+control		{ return(CONTROL); }
+corbomite{WS}bluff	|
+corbomite	{ return(CORB); }
+course		{ return(COURSE); }
+damage{WS}report	|
+damage		{ return(DAMAGE); }
+play{WS}dead	|
+dead		{ return(DEAD); }
+demand		{ return(DEMAND); }
+self-destruct		|
+self{WS}destruct	|
+destruct	{ return(DESTR); }
+detonate	{ return(DET); }
+display		{ return(DISPLAY); }
+elude		{ return(ELUDE); }
+engineering	|
+eng		{ return(ENG); }
+fire		{ return(FIRE); }
+help		{ return(HELP); }
+jettison	|
+jett		{ return(JETT); }
+launch		{ return(LAUNCH); }
+load		{ return(LOAD); }
+lock		{ return(LOCK); }
+parameters	|
+params		|
+param		{ return(PARAM); }
+phasers		|
+phaser		{ return(PHASER); }
+alter{WS}power	|
+power		{ return(POWER); }
+probe		{ return(PROBE); }
+pursue		{ return(PURSUE); }
+rotate		{ return(ROTATE); }
+save		{ return(SAVE); }
+scan		{ return(SCAN); }
+spread		{ return(SPREAD); }
+status		{ return(STATUS); }
+surrender	{ return(SURREND); }
+survivors{WS}report	|
+survivors	|
+surv		{ return(SURV); }
+tactical	{ return(TACTIC); }
+photons		|
+photon		|
+torpedos	|
+torpedo		|
+torp		|
+tubes		|
+tube		{ return(TUBE); }
+unload		{ return(UNLOAD); }
+version		{ return(VERSION); }
+warp{WS}factor	|
+warp		{ return(WARP); }
+
+[A-Za-z#]+	{ (void) strcpy( yylval.sval, yytext); return(NAME); }
+{WS}		;
+\n		{ return(-1); }
+.		;
+%%
+
+#undef input
+#undef unput
+
+input()
+{
+	int c;
+
+	c = *Inptr++;
+	return (c);
+}
+
+unput(c)
+char c;
+{
+	Inptr--;
+}
+SHAR_EOF
+fi # end of overwriting check
+if test -f 'grammar.y'
+then
+	echo shar: will not over-write existing file "'grammar.y'"
+else
+cat << \SHAR_EOF > 'grammar.y'
+%token <dval> NUMBER
+%token <sval> NAME
+
+%token ABORT
+%token ALL
+%token CONTROL
+%token CORB
+%token COURSE
+%token DAMAGE
+%token DEAD
+%token DEMAND
+%token DESTR
+%token DET
+%token DISPLAY
+%token ELUDE
+%token ENG
+%token FIRE
+%token HELP
+%token JETT
+%token LAUNCH
+%token LOAD
+%token LOCK
+%token PARAM
+%token PHASER
+%token POWER
+%token PROBE
+%token PURSUE
+%token ROTATE
+%token SAVE
+%token SCAN
+%token SPREAD
+%token STATUS
+%token SURREND
+%token SURV
+%token TACTIC
+%token TUBE
+%token UNLOAD
+%token VERSION
+%token WARP
+
+%type <dval> number1
+%type <dval> number2
+%type <sval> name
+
+%{
+#include "union.h"
+	char parsed[80];
+	char string[80];
+	double num1;
+	double num2;
+%}
+
+%%
+
+orders	:
+	|	'\n'
+	|	error
+			{ yyclearin; }
+	|	phfire
+	|	tufire
+	|	phlock
+	|	tulock
+	|	phrot
+	|	turot
+	|	phstat
+	|	tustat
+	|	tuload
+	|	probe
+	|	control
+	|	tactical
+	|	display
+	|	pursue
+	|	elude
+	|	course
+	|	damage
+	|	scan
+	|	power
+	|	jettison
+	|	detonate
+	|	dead
+	|	param
+	|	corb
+	|	surr
+	|	esurr
+	|	selfd
+	|	abort
+	|	surv
+	|	version
+	|	save
+	|	help
+	;
+
+number1	:	NUMBER
+			{ num1 = yylval.dval; }
+	;
+
+number2	:	NUMBER
+			{ num2 = yylval.dval; }
+	;
+
+name	:	NAME
+			{ strcpy(string, yylval.sval); }
+	;
+
+phfire	:	FIRE	PHASER	number1	SPREAD	number2
+			{ sprintf(parsed, "1 %.0f %.0f", num1, num2);}
+	|	FIRE	PHASER	number1
+			{ sprintf(parsed, "1 %.0f", num1); }
+	|	FIRE	ALL	PHASER	SPREAD	number1
+			{ sprintf(parsed, "1 all %.0f", num1); }
+	|	FIRE	ALL	PHASER
+			{ strcpy(parsed, "1 all"); }
+	|	FIRE	PHASER
+			{ strcpy(parsed, "1"); }
+	;
+
+tufire	:	FIRE	TUBE	number1
+			{ sprintf(parsed, "2 %.0f", num1); }
+	|	FIRE	ALL	TUBE
+			{ sprintf(parsed, "2 all"); }
+	|	FIRE	TUBE
+			{ strcpy(parsed, "2"); }
+	;
+
+phlock	:	LOCK	PHASER	number1	name
+			{ sprintf(parsed, "3 %.0f %s", num1, string);}
+	|	LOCK	PHASER	number1
+			{ sprintf(parsed, "3 %.0f", num1); }
+	|	LOCK	ALL	PHASER	name
+			{ (void)sprintf(parsed, "3 all %s", string); }
+	|	LOCK	ALL	PHASER
+			{ strcpy(parsed, "3 all"); }
+	|	LOCK	PHASER
+			{ strcpy(parsed, "3"); }
+	;
+
+tulock	:	LOCK	TUBE	number1	name
+			{ sprintf(parsed, "4 %.0f %s", num1, string);}
+	|	LOCK	TUBE	number1
+			{ sprintf(parsed, "4 %.0f", num1); }
+	|	LOCK	ALL	TUBE	name
+			{ (void)sprintf(parsed, "4 all %s", string); }
+	|	LOCK	ALL	TUBE
+			{ strcpy(parsed, "4 all"); }
+	|	LOCK	TUBE
+			{ strcpy(parsed, "4"); }
+	;
+
+phrot	:	ROTATE	ALL	PHASER	number1
+			{ sprintf(parsed, "5 all %.0f", num1); }
+	|	ROTATE	ALL	PHASER
+			{ strcpy(parsed, "5 all"); }
+	|	ROTATE	PHASER	number1	number2
+			{ sprintf(parsed,"5 %.0f %.0f", num1, num2); }
+	|	ROTATE	PHASER	number1
+			{ sprintf(parsed,"5 %.0f", num1); }
+	;
+
+turot	:	ROTATE	ALL	TUBE	number1
+			{ sprintf(parsed, "6 all %.0f", num1); }
+	|	ROTATE	ALL	TUBE
+			{ strcpy(parsed, "6 all"); }
+	|	ROTATE	TUBE	number1	number2
+			{ sprintf(parsed,"6 %.0f %.0f", num1, num2); }
+	|	ROTATE	TUBE	number1
+			{ sprintf(parsed,"6 %.0f", num1); }
+	;
+
+phstat	:	PHASER	STATUS
+			{ strcpy(parsed, "7"); }
+	;
+			  
+tustat	:	TUBE	STATUS
+			{ strcpy(parsed, "8"); }
+	;
+
+tuload	:	LOAD	ALL	TUBE
+			{ strcpy(parsed, "9 l all"); }
+	|	UNLOAD	ALL	TUBE
+			{ strcpy(parsed, "9 u all"); }
+	|	LOAD	TUBE	number1
+			{ sprintf(parsed, "9 l %.0f", num1); }
+	|	UNLOAD	TUBE	number1
+			{ sprintf(parsed, "9 u %.0f", num1); }
+	|	LOAD	TUBE
+			{ strcpy(parsed, "9 l"); }
+	|	UNLOAD	TUBE
+			{ strcpy(parsed, "9 u"); }
+	;
+			  
+probe	:	LAUNCH	PROBE
+			{ strcpy(parsed, "10"); }
+	;
+
+control	:	CONTROL	PROBE	number1
+			{ sprintf(parsed, "11 %.0f", num1); }
+	|	CONTROL	PROBE
+			{ strcpy(parsed, "11"); }
+	|	PROBE	CONTROL	number1
+			{ sprintf(parsed, "11 %.0f", num1); }
+	|	PROBE	CONTROL
+			{ strcpy(parsed, "11"); }
+	;
+
+tactical:	TACTIC
+			{ strcpy(parsed, "12"); }
+	;
+
+display	:	DISPLAY	number1
+			{ sprintf(parsed, "13 %.0f", num1); }
+	|	DISPLAY
+			{ strcpy(parsed, "13"); }
+	;
+
+pursue	:	PURSUE	name	WARP	number1
+			{ sprintf(parsed, "14 %s %f", string, num1);}
+	|	PURSUE	name
+			{ sprintf(parsed, "14 %s", string); }
+	|	PURSUE
+			{ strcpy(parsed, "14"); }
+	;
+
+elude	:	ELUDE	name	WARP	number1
+			{ sprintf(parsed, "15 %s %f", string, num1);}
+	|	ELUDE	name
+			{ sprintf(parsed, "15 %s", string); }
+	|	ELUDE
+			{ strcpy(parsed, "15"); }
+	;
+
+course	:	COURSE	number1	WARP	number2
+			{ sprintf(parsed, "16 %.0f %0f", num1, num2);}
+	;
+
+damage	:	DAMAGE
+			{ strcpy(parsed, "17"); }
+	;
+
+scan	:	SCAN	name
+			{ sprintf(parsed, "18 %s", string); }
+	|	SCAN	number1
+			{ sprintf(parsed, "18 %.0f", num1); }
+	|	SCAN
+			{ strcpy(parsed, "18"); }
+	;
+
+power	:	POWER
+			{ strcpy(parsed, "19"); }
+	;
+
+jettison:	JETT	ENG
+			{ strcpy(parsed, "20"); }
+	;
+
+detonate:	DET	ENG	name
+			{ sprintf(parsed, "21 %s", string); }
+	|	DET	ENG
+			{ strcpy(parsed, "21"); }
+	;
+
+param	:	PARAM
+			{ strcpy(parsed, "22"); }
+	;
+
+dead	:	DEAD	name
+			{ sprintf(parsed, "23 %s", string); }
+	|	DEAD
+			{ strcpy(parsed, "23"); }
+	;
+		
+corb	:	CORB
+			{ strcpy(parsed, "24"); }
+	;
+
+surr	:	SURREND
+			{ strcpy(parsed, "25"); }
+	;
+
+esurr	:	DEMAND	SURREND
+			{ strcpy(parsed, "26"); }
+	;
+
+selfd	:	DESTR
+			{ strcpy(parsed, "27"); }
+	;
+
+abort	:	ABORT	DESTR
+			{ strcpy(parsed, "28"); }
+	;
+
+surv	:	SURV
+			{ strcpy(parsed, "29"); }
+	;
+
+version	:	VERSION
+			{ strcpy(parsed, "30"); }
+	;
+
+save	:	SAVE
+			{ strcpy(parsed, "31"); }
+	;
+
+help	:	HELP
+			{ strcpy(parsed, "32"); }
+	;
+			
+%%
+
+#include "lex.yy.c"
+
+yywrap() { return(1); }
+
+yyerror(s) char *s; { fprintf(stderr, "%s", s); }
+SHAR_EOF
+fi # end of overwriting check
+if test -f 'main.c'
+then
+	echo shar: will not over-write existing file "'main.c'"
+else
+cat << \SHAR_EOF > 'main.c'
+#include <stdio.h>
+#include <string.h>
+
+main(argc, argv)
+int argc;
+char **argv;
+{
+	extern int yydebug;
+	extern char Input[];
+	extern char *Inptr;
+	extern char parsed[];
+	int i;
+	char buf[BUFSIZ];
+
+	if (argc > 1)
+		yydebug = 1;
+	else
+		yydebug = 0;
+	printf("\nCommand: ");
+	while((i = fgets(buf, BUFSIZ, stdin) != NULL)) {
+		(void) strcpy(Input, buf);
+		Inptr = Input;
+		parsed[0] = '\0';
+		yyparse();
+		printf("%s\n", parsed);
+		printf("Command: ");
+	}
+}
+SHAR_EOF
+fi # end of overwriting check
+if test -f 'union.h'
+then
+	echo shar: will not over-write existing file "'union.h'"
+else
+cat << \SHAR_EOF > 'union.h'
+typedef union {
+	double dval;
+	char sval[20];
+} YYSTYPE;
+SHAR_EOF
+fi # end of overwriting check
+#	End of shell archive
+exit 0
+

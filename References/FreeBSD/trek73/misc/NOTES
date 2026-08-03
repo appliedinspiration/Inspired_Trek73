@@ -1,0 +1,12 @@
+BPV = Regen * 12
+	+ Pods / 2
+	+ Phaser divisor * 30
+	+ Torp divisor * 40
+	+ Number weapons * 10
+	+ Crew / 15;
+
+Efficiency = 0.0034 * BPV - 0.78 rounded to nearest 0.25
+
+Turning = 10 - floor(BPV / 100)
+
+Max speed = -0.004 * BPV + 11 rounded to nearest whole number
