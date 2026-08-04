@@ -1,0 +1,15 @@
+1) Bug fidelity: Please fix obviously unintended bugs by default
+2) Parser Fidelity: A numeric-command compatibility plus a simpler text parser is sufficient for most use cases. The parser should be able to handle both numeric commands and simple text inputs without requiring complex parsing logic. The original commands must all be supported.
+3) Legacy file compatibility: both formats can be replaced, however the data files must contain the logical equivalent of the contents of the original data files.
+4) Content modernization: Do not remove offensive fallback titles in name_crew()
+5) The licensing of this code is not specified, but it is assumed to be open source and free to use for any purpose. However, regarding the authors of this code, I have more complete information.
+Original authors of Trek73:
+  William K. Char
+  Perry Lee
+  Dan Gee
+
+ The authors of the FreeBSD version of the code (upon which this code is based) are:
+  Jeff Okamoto
+  Peter Yee
+
+  Be sure to use this information to give proper credit to the original authors both in messages displayed by the program and in the README.txt file

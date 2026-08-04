@@ -17,6 +17,11 @@ coverage.*
 *.coverprofile
 profile.cov
 
+# Built game binaries (extensionless on Linux/macOS)
+/inspired_trek73
+/inspired_trek73_linux
+/inspired_trek73_mac
+
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
