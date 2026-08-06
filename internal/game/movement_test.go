@@ -322,7 +322,7 @@ func TestMiscTimersSelfDestructWarning(t *testing.T) {
 	}
 	found := false
 	for _, m := range messages {
-		if m == "Computer: seconds to self destruct." {
+		if m == "Computer: 500.00 seconds to self destruct." {
 			found = true
 		}
 	}

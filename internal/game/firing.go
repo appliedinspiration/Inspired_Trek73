@@ -29,7 +29,7 @@ func AntimatterHit(st *State, sourceShip *Ship, sourceObj *SpaceObject, x, y, fu
 	}
 
 	for _, obj := range st.Objects {
-		if obj == sourceObj {
+		if obj == sourceObj || obj.Detonated {
 			continue
 		}
 		hit := TorpedoHit(fuel, x, y, obj.X, obj.Y)
@@ -169,6 +169,9 @@ func (h *CombatHooks) PhaserFiring(sp *Ship) {
 		h.messages = append(h.messages, Damage(hit, ep, facing, &data.PhaserDamage, DamagePhaser, fed, h.Rand)...)
 	}
 	for _, obj := range h.State.Objects {
+		if obj.Detonated {
+			continue
+		}
 		hit := PhaserHit(sp, obj.X, obj.Y, bank, bear)
 		if hit <= 0 {
 			continue
@@ -298,6 +301,7 @@ func (h *CombatHooks) ShipDetonate(sp *Ship) {
 // responsible for removing obj from State.Objects afterward (recorded
 // in h.DetonatedObjects).
 func (h *CombatHooks) TorpDetonate(obj *SpaceObject) {
+	obj.Detonated = true
 	switch obj.Type {
 	case ObjectTorpedo:
 		h.emit(fmt.Sprintf(":: torp %d ::", obj.ID))

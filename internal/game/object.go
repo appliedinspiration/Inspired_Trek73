@@ -30,4 +30,5 @@ type SpaceObject struct {
 
 	TimeDelay float64 // Seconds remaining until the detonation timer expires.
 	Proximity int     // Proximity-fuse trigger distance.
+	Detonated bool    // Set once the object has detonated so it cannot fire again this turn before removal.
 }

@@ -20,6 +20,23 @@ func TestPosReportListsShipsAndSelf(t *testing.T) {
 	}
 }
 
+func TestPosReportHeadersAlignWithDataColumns(t *testing.T) {
+	st := newTestState(newTestShip(0, "Enterprise", 0, 0), newTestShip(1, "Klingon", 1000, 0))
+	sp := st.Player()
+	lines := PosReport(st, sp)
+	if len(lines) < 3 {
+		t.Fatalf("PosReport returned too few lines: %v", lines)
+	}
+	wantTop := "            " + "                     abs           rel   rev rel"
+	wantBottom := "            " + " class warp course bearing range bearing bearing"
+	if lines[0] != wantTop {
+		t.Fatalf("top header = %q, want %q", lines[0], wantTop)
+	}
+	if lines[1] != wantBottom {
+		t.Fatalf("bottom header = %q, want %q", lines[1], wantBottom)
+	}
+}
+
 func TestPosReportShowsHelmLock(t *testing.T) {
 	st := newTestState(newTestShip(0, "Enterprise", 0, 0), newTestShip(1, "Klingon", 1000, 0))
 	sp := st.Player()

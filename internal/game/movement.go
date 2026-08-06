@@ -1,6 +1,9 @@
 package game
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 // MoveShips advances the battle by one full turn (SecondsPerTurn
 // seconds), simulating movement, firing, fuses, and course/speed
@@ -53,9 +56,13 @@ func MoveShips(st *State, hooks MovementHooks) []string {
 		}
 
 		for _, obj := range st.Objects {
+			if obj.Detonated {
+				continue
+			}
 			// Time fuse.
 			obj.TimeDelay -= SegmentSeconds
 			if obj.TimeDelay <= 0 {
+				obj.Detonated = true
 				hooks.TorpDetonate(obj)
 				continue
 			}
@@ -63,6 +70,7 @@ func MoveShips(st *State, hooks MovementHooks) []string {
 			// Proximity fuse.
 			if obj.Proximity != 0 {
 				if proximityTriggered(st, obj) {
+					obj.Detonated = true
 					hooks.TorpDetonate(obj)
 					continue
 				}
@@ -398,7 +406,7 @@ func MiscTimers(st *State) []string {
 			messages = append(messages, "Science: Self-destruct has been aborted due to computer damage")
 			fed.Delay = 10000.0
 		} else {
-			messages = append(messages, "Computer: seconds to self destruct.")
+			messages = append(messages, fmt.Sprintf("Computer: %5.2f seconds to self destruct.", fed.Delay))
 		}
 	}
 

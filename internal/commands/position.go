@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/appliedinspiration/inspired_trek73/internal/game"
 )
@@ -16,9 +17,10 @@ import (
 // longest name, this renders a simpler fixed-width table; the
 // information conveyed is identical.
 func PosReport(st *game.State, sp *game.Ship) []string {
+	nameWidth := posReportNameWidth(st)
 	lines := []string{
-		"                     abs           rel   rev rel",
-		"class warp course bearing range bearing bearing",
+		fmt.Sprintf("%s                     abs           rel   rev rel", strings.Repeat(" ", nameWidth)),
+		fmt.Sprintf("%s class warp course bearing range bearing bearing", strings.Repeat(" ", nameWidth)),
 	}
 	for _, sp1 := range st.Ships {
 		if sp1.IsDead(game.SysDead) {
@@ -43,14 +45,15 @@ func PosReport(st *game.State, sp *game.Ship) []string {
 			if sp.Target != nil {
 				lockLine = fmt.Sprintf("helm locked on %s", sp.Target.Name)
 			}
-			lines = append(lines, fmt.Sprintf("%-10s %5s %6.1f %6.0f   %s", who, sp1.Class, speed, course, lockLine))
+			lines = append(lines, fmt.Sprintf("%-*s%5s%6.1f   %3.0f   %s", nameWidth, who, sp1.Class, speed, course, lockLine))
 			continue
 		}
 		bear := game.BearingTo(sp.X, x, sp.Y, y)
 		rng := game.RangeFind(sp.X, x, sp.Y, y)
 		relBear := game.Rectify(round(bear - sp.Course))
 		revRelBear := game.Rectify(round(bear + 180.0 - course))
-		lines = append(lines, fmt.Sprintf("%-10s %5s %6.1f %6.0f  %4.0f %6d %5.0f   %5.0f",
+		lines = append(lines, fmt.Sprintf("%-*s%5s%6.1f   %3.0f    %3.0f   %5d   %3.0f     %3.0f",
+			nameWidth,
 			who, sp1.Class, speed, course, bear, rng, relBear, revRelBear))
 	}
 	for _, obj := range st.Objects {
@@ -62,10 +65,28 @@ func PosReport(st *game.State, sp *game.Ship) []string {
 		rng := game.RangeFind(sp.X, obj.X, sp.Y, obj.Y)
 		relBear := game.Rectify(round(bear - sp.Course))
 		revRelBear := game.Rectify(round(bear + 180.0 - obj.Course))
-		lines = append(lines, fmt.Sprintf("%-18s       %6.1f %6.0f  %4.0f %6d %5.0f   %5.0f",
-			who, obj.Speed, obj.Course, bear, rng, relBear, revRelBear))
+		lines = append(lines, fmt.Sprintf("%-*s%5s%6.1f   %3.0f    %3.0f   %5d   %3.0f     %3.0f",
+			nameWidth, who, "", obj.Speed, obj.Course, bear, rng, relBear, revRelBear))
 	}
 	return lines
+}
+
+func posReportNameWidth(st *game.State) int {
+	maxLen := 0
+	for _, sp := range st.Ships {
+		if n := len(sp.Name); n > maxLen {
+			maxLen = n
+		}
+	}
+	for _, obj := range st.Objects {
+		if obj.Type == game.ObjectTorpedo {
+			continue
+		}
+		if labelLen := len(objectLabel(obj)); labelLen > maxLen {
+			maxLen = labelLen
+		}
+	}
+	return maxLen + 2
 }
 
 func objectLabel(obj *game.SpaceObject) string {

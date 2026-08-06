@@ -104,3 +104,37 @@ func TestRunTurn_EmitsTorpedoAndDamageMessagesSameTurn(t *testing.T) {
 		t.Fatalf("torpedo fire message leaked into next turn: %v", nextMsgs)
 	}
 }
+
+func TestRunTurn_DetonatesEachTorpedoOnlyOnce(t *testing.T) {
+	fed := newTestShip(0, 0, 0)
+	enemy := newTestShip(1, 0, 0)
+	enemy.Name = "Millennium Pelican"
+	for i := range enemy.Shields {
+		enemy.Shields[i] = Shield{Eff: 0.0, Drain: 0.0}
+	}
+
+	torp := &SpaceObject{
+		ID:        4,
+		Type:      ObjectTorpedo,
+		From:      fed,
+		X:         enemy.X,
+		Y:         enemy.Y,
+		Course:    0,
+		Speed:     0,
+		NewSpeed:  0,
+		Fuel:      40,
+		TimeDelay: SegmentSeconds / 2,
+	}
+	st := newTestState(fed, enemy)
+	st.Objects = append(st.Objects, torp)
+	hooks := NewCombatHooks(st, NewRand(1))
+
+	msgs := RunTurn(st, hooks)
+	joined := strings.Join(msgs, "\n")
+	if strings.Count(joined, ":: torp 4 ::") != 1 {
+		t.Fatalf("torpedo detonation should be reported once, got messages: %v", msgs)
+	}
+	if strings.Count(joined, "Millennium Pelican's shield") != 1 {
+		t.Fatalf("torpedo damage should be applied once, got messages: %v", msgs)
+	}
+}
