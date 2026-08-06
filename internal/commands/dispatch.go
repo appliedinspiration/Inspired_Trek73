@@ -83,20 +83,29 @@ func Version() []string {
 }
 
 // Help lists every command's code, description, and TURN/FREE marker,
-// ported from help() in misc.c. The original printed the list in two
-// side-by-side columns; this port lists them one per line for
-// simplicity, since exact column layout isn't a gameplay behavior
-// worth preserving.
+// ported from help() in misc.c.
 func Help() []string {
 	msgs := []string{"", "Trek73 Commands:", ""}
-	for _, c := range CommandTable {
-		marker := "*" // FREE: does not end the turn.
-		if c.Turn {
-			marker = " "
+	mid := (len(CommandTable) + 1) / 2
+	for i := 0; i < mid; i++ {
+		left := formatHelpEntry(CommandTable[i])
+		rightIndex := i + mid
+		if rightIndex < len(CommandTable) {
+			right := formatHelpEntry(CommandTable[rightIndex])
+			msgs = append(msgs, fmt.Sprintf("%-40s %s", left, right))
+			continue
 		}
-		msgs = append(msgs, fmt.Sprintf("%3d: %s %s", c.Code, marker, c.Description))
+		msgs = append(msgs, left)
 	}
 	return msgs
+}
+
+func formatHelpEntry(c CommandSpec) string {
+	marker := "*" // FREE: does not end the turn.
+	if c.Turn {
+		marker = " "
+	}
+	return fmt.Sprintf("%2d: %s %-32s", c.Code, marker, c.Description)
 }
 
 var numberRe = regexp.MustCompile(`^[+-]?[0-9.]+$`)

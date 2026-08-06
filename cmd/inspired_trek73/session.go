@@ -46,6 +46,9 @@ func (c *cliSession) run() error {
 			}
 			return err
 		}
+		if strings.TrimSpace(line) == "" {
+			line = "32"
+		}
 
 		code, args, ok := commands.ParseCommand(line)
 		if !ok {

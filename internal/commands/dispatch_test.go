@@ -48,6 +48,16 @@ func TestHelp(t *testing.T) {
 	if !found {
 		t.Errorf("expected help to list 'Fire phasers', got %v", msgs)
 	}
+	twoColumnLine := false
+	for _, m := range msgs {
+		if strings.Contains(m, " 1:") && strings.Contains(m, "17:") {
+			twoColumnLine = true
+			break
+		}
+	}
+	if !twoColumnLine {
+		t.Errorf("expected two-column help layout, got %v", msgs)
+	}
 }
 
 func TestParseNumeric(t *testing.T) {

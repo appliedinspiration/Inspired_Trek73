@@ -53,7 +53,7 @@ func TestTorpedoHitPositiveAtCloseRange(t *testing.T) {
 	}
 }
 
-func TestDamageFullShieldBlocksAllDamage(t *testing.T) {
+func TestDamageFullShieldBlocksAllInternalDamage(t *testing.T) {
 	sp := newTestShip(0, 0, 0)
 	sp.Shields[0] = Shield{Eff: 1.0, Drain: 1.0}
 	origEnergy := sp.Energy
@@ -61,8 +61,9 @@ func TestDamageFullShieldBlocksAllDamage(t *testing.T) {
 
 	messages := Damage(100, sp, 1, &data.PhaserDamage, DamagePhaser, sp, r)
 
-	if len(messages) != 0 {
-		t.Errorf("messages = %v, want none (full shield blocks all damage)", messages)
+	want := "hit 100 on TestShip's shield 1"
+	if len(messages) != 1 || messages[0] != want {
+		t.Errorf("messages = %v, want [%q]", messages, want)
 	}
 	if sp.Energy != origEnergy {
 		t.Errorf("Energy = %v, want unchanged %v", sp.Energy, origEnergy)
@@ -234,6 +235,7 @@ func TestTorpedoFiringUsesTubeBearingNotPhaserBearing(t *testing.T) {
 
 func TestShipDetonateMarksShipDestroyed(t *testing.T) {
 	sp := newTestShip(0, 0, 0)
+	sp.Name = "Trakka"
 	other := newTestShip(1, 5, 5)
 	st := newTestState(sp, other)
 	hooks := NewCombatHooks(st, NewRand(1))
@@ -250,6 +252,16 @@ func TestShipDetonateMarksShipDestroyed(t *testing.T) {
 		if sp.Status[i] != 100 {
 			t.Errorf("Status[%d] = %d, want 100", i, sp.Status[i])
 		}
+	}
+	found := false
+	for _, m := range hooks.TakeMessages() {
+		if m == "++Trakka++ destruct." {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("expected exact ship destruct message")
 	}
 }
 

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/appliedinspiration/inspired_trek73/internal/banner"
@@ -17,9 +19,10 @@ import (
 )
 
 type cliOptions struct {
-	ShowVersion bool
-	ShowHelp    bool
-	Init        game.InitOptions
+	ShowVersion        bool
+	ShowHelp           bool
+	EnemyCountProvided bool
+	Init               game.InitOptions
 }
 
 func main() {
@@ -42,7 +45,7 @@ func main() {
 		return
 	}
 
-	if err := run(opts.Init); err != nil {
+	if err := run(opts); err != nil {
 		fmt.Fprintln(os.Stdout)
 		fmt.Fprintln(os.Stdout, err)
 		os.Exit(1)
@@ -69,17 +72,31 @@ func parseFlags() cliOptions {
 	flag.BoolVar(&opts.Init.AllowSillyRace, "allow-silly-race", false, "allow Monty Python race in random selection")
 	flag.StringVar(&opts.Init.PlayerShipName, "ship-name", "", "player ship name (default: random Federation ship)")
 	flag.Parse()
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "enemies" {
+			opts.EnemyCountProvided = true
+		}
+	})
 
 	return opts
 }
 
-func run(initOpts game.InitOptions) error {
+func run(opts cliOptions) error {
 	reader := bufio.NewReader(os.Stdin)
 	r := game.NewRandFromTime()
 
 	crew, err := promptCrewNames(reader, os.Stdout, r)
 	if err != nil {
 		return err
+	}
+
+	initOpts := opts.Init
+	if !opts.EnemyCountProvided {
+		enemyCount, err := promptEnemyVesselCount(reader, os.Stdout)
+		if err != nil {
+			return err
+		}
+		initOpts.EnemyCount = enemyCount
 	}
 
 	res, err := game.NewGame(initOpts, r)
@@ -108,5 +125,19 @@ func formatStardate(now time.Time) string {
 func printLines(w io.Writer, lines []string) {
 	for _, line := range lines {
 		fmt.Fprintln(w, line)
+	}
+}
+
+func promptEnemyVesselCount(reader *bufio.Reader, w io.Writer) (int, error) {
+	for {
+		line, err := promptLine(reader, w, "I'm expecting [1-9] enemy vessels: ")
+		if err != nil {
+			return 0, err
+		}
+		n, err := strconv.Atoi(strings.TrimSpace(line))
+		if err == nil && n >= 1 && n <= game.MaxEnemyShips {
+			return n, nil
+		}
+		fmt.Fprintln(w, "Please enter a number from 1 to 9.")
 	}
 }

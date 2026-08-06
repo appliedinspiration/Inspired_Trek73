@@ -15,12 +15,15 @@ import (
 func Damage(hit int, ep *Ship, facing int, dam *data.DamageProfile, flag int, fed *Ship, r *Rand) []string {
 	var messages []string
 	s := facing - 1
+	if hit > 0 {
+		messages = append(messages, fmt.Sprintf("hit %d on %s's shield %d", hit, ep.Name, facing))
+	}
 
 	// If the shield is at 100% efficiency, no damage at all is taken
 	// (except to the shield itself).
 	f1 := float64(hit) * (1.0 - ep.Shields[s].Eff*ep.Shields[s].Drain)
 	if f1 < 0 {
-		return nil
+		return messages
 	}
 
 	// Calculate shield damage.

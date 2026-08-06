@@ -92,6 +92,22 @@ func TestPosDisplayPlotsNearbyShip(t *testing.T) {
 	}
 }
 
+func TestPosDisplayKeepsFullGridProportions(t *testing.T) {
+	sp := newTestShip(0, "Enterprise", 0, 0)
+	st := newTestState(sp)
+	r := game.NewRand(1)
+	lines := PosDisplay(sp, st, r, 500)
+	if len(lines) != 13 {
+		t.Fatalf("len(lines) = %d, want 13 full-height rows", len(lines))
+	}
+	if lines[0][0] != '-' || lines[0][len(lines[0])-1] != '-' {
+		t.Fatalf("top border malformed: %q", lines[0])
+	}
+	if lines[1][0] != '|' || lines[1][len(lines[1])-1] != '|' {
+		t.Fatalf("side borders malformed: %q", lines[1])
+	}
+}
+
 func TestPosDisplayLowercasesCloakedShip(t *testing.T) {
 	sp := newTestShip(0, "Enterprise", 0, 0)
 	enemy := newTestShip(1, "Klingon", 100, 0)

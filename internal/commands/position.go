@@ -18,7 +18,7 @@ import (
 func PosReport(st *game.State, sp *game.Ship) []string {
 	lines := []string{
 		"                     abs           rel   rev rel",
-		" class warp course bearing range bearing bearing",
+		"class warp course bearing range bearing bearing",
 	}
 	for _, sp1 := range st.Ships {
 		if sp1.IsDead(game.SysDead) {
@@ -122,6 +122,8 @@ func PosDisplay(sp *game.Ship, st *game.State, r *game.Rand, rng int) []string {
 		for j := range grid[i] {
 			if i == 0 || i == 2*vpitch {
 				grid[i][j] = '-'
+			} else if j == 0 || j == 2*hpitch {
+				grid[i][j] = '|'
 			} else {
 				grid[i][j] = ' '
 			}
@@ -176,16 +178,6 @@ func PosDisplay(sp *game.Ship, st *game.State, r *game.Rand, rng int) []string {
 
 	var lines []string
 	for i := range grid {
-		blank := true
-		for _, c := range grid[i] {
-			if c != ' ' {
-				blank = false
-				break
-			}
-		}
-		if blank {
-			continue
-		}
 		lines = append(lines, string(grid[i]))
 	}
 	return lines

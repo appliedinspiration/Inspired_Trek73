@@ -1,6 +1,9 @@
 package game
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestRunTurn_AdvancesAndChecksDisposition(t *testing.T) {
 	fed := newTestShip(0, 0, 0)
@@ -55,5 +58,49 @@ func TestRunTurn_RemovesDetonatedAndAddsLaunchedObjects(t *testing.T) {
 	}
 	if !found {
 		t.Error("launched object should have been added to st.Objects")
+	}
+}
+
+func TestRunTurn_EmitsTorpedoAndDamageMessagesSameTurn(t *testing.T) {
+	fed := newTestShip(0, 0, 0)
+	fed.Name = "Potempkin"
+	fed.Course, fed.NewCourse = 0, 0
+	fed.Warp, fed.NewWarp = 1.0, 1.0
+	fed.TorpedoFiringDelay = 1
+	fed.TubeLaunchSpd = 12
+	fed.Tubes[0].Load = 100
+	fed.Tubes[0].Status |= TubeFiring
+	fed.PhaserFiringDelay = 1
+	fed.Phasers[0].Load = 100
+	fed.Phasers[0].Status |= PhaserFiring
+	fed.PhaserSpread = 45
+	fed.PhaserFirePct = 100
+
+	enemy := newTestShip(1, 100, 0)
+	enemy.Name = "Meteor"
+	enemy.Course, enemy.NewCourse = 180, 180
+	enemy.Warp, enemy.NewWarp = 1.0, 1.0
+	enemy.Shields[0] = Shield{Eff: 0.0, Drain: 0.0}
+	enemy.Shields[1] = Shield{Eff: 0.0, Drain: 0.0}
+	enemy.Shields[2] = Shield{Eff: 0.0, Drain: 0.0}
+	enemy.Shields[3] = Shield{Eff: 0.0, Drain: 0.0}
+
+	st := newTestState(fed, enemy)
+	r := NewRand(1)
+	hooks := NewCombatHooks(st, r)
+
+	msgs := RunTurn(st, hooks)
+	joined := strings.Join(msgs, "\n")
+	if !strings.Contains(joined, "<<Potempkin frng torpedo") {
+		t.Fatalf("expected torpedo fire message this turn, got: %v", msgs)
+	}
+	if !strings.Contains(joined, "hit ") || !strings.Contains(joined, "on Meteor's shield") {
+		t.Fatalf("expected immediate ship damage message this turn, got: %v", msgs)
+	}
+
+	nextMsgs := RunTurn(st, hooks)
+	nextJoined := strings.Join(nextMsgs, "\n")
+	if strings.Contains(nextJoined, "<<Potempkin frng torpedo") {
+		t.Fatalf("torpedo fire message leaked into next turn: %v", nextMsgs)
 	}
 }

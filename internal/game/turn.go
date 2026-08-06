@@ -25,6 +25,7 @@ func RunTurn(st *State, hooks *CombatHooks) []string {
 	}
 
 	messages = append(messages, MoveShips(st, hooks)...)
+	messages = append(messages, hooks.TakeMessages()...)
 
 	if len(hooks.LaunchedObjects) > 0 {
 		st.Objects = append(st.Objects, hooks.LaunchedObjects...)
