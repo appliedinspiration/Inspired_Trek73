@@ -16,16 +16,25 @@ import (
 	"github.com/appliedinspiration/inspired_trek73/internal/version"
 )
 
+type cliOptions struct {
+	ShowVersion bool
+	ShowHelp    bool
+	Init        game.InitOptions
+}
+
 func main() {
+	opts := parseFlags()
+
+	if opts.ShowHelp {
+		flag.Usage()
+		return
+	}
+
 	// Go's flag package treats "-version" and "--version" identically,
 	// satisfying both spellings requested for the CLI.
-	var showVersion bool
-	flag.BoolVar(&showVersion, "version", false, "print version information and exit")
-	flag.Parse()
-
 	banner.Print(os.Stdout)
 
-	if showVersion {
+	if opts.ShowVersion {
 		fmt.Println()
 		fmt.Println(version.String())
 		fmt.Println()
@@ -33,14 +42,38 @@ func main() {
 		return
 	}
 
-	if err := run(); err != nil {
+	if err := run(opts.Init); err != nil {
 		fmt.Fprintln(os.Stdout)
 		fmt.Fprintln(os.Stdout, err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
+func parseFlags() cliOptions {
+	opts := cliOptions{}
+
+	flag.CommandLine.SetOutput(os.Stdout)
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: %s [options]\n\n", os.Args[0])
+		fmt.Fprintln(flag.CommandLine.Output(), "Options:")
+		flag.PrintDefaults()
+	}
+
+	flag.BoolVar(&opts.ShowVersion, "version", false, "print version information and exit")
+	flag.BoolVar(&opts.ShowHelp, "help", false, "show available options and exit")
+	flag.BoolVar(&opts.ShowHelp, "h", false, "show available options and exit")
+	flag.IntVar(&opts.Init.EnemyCount, "enemies", 0, "number of enemy ships (1-9, 0=random)")
+	flag.StringVar(&opts.Init.PlayerClassAbbr, "player-class", "", "player ship class abbreviation (default: CA)")
+	flag.StringVar(&opts.Init.EnemyClassAbbr, "enemy-class", "", "enemy ship class abbreviation (default: CA)")
+	flag.StringVar(&opts.Init.RaceName, "race", "", "enemy race name prefix (default: random)")
+	flag.BoolVar(&opts.Init.AllowSillyRace, "allow-silly-race", false, "allow Monty Python race in random selection")
+	flag.StringVar(&opts.Init.PlayerShipName, "ship-name", "", "player ship name (default: random Federation ship)")
+	flag.Parse()
+
+	return opts
+}
+
+func run(initOpts game.InitOptions) error {
 	reader := bufio.NewReader(os.Stdin)
 	r := game.NewRandFromTime()
 
@@ -49,7 +82,7 @@ func run() error {
 		return err
 	}
 
-	res, err := game.NewGame(game.InitOptions{}, r)
+	res, err := game.NewGame(initOpts, r)
 	if err != nil {
 		return err
 	}

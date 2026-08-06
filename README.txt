@@ -73,6 +73,15 @@ Run Instructions
 -----------------
     ./inspired_trek73          Run the program
     ./inspired_trek73 -version Print version and build information
+    ./inspired_trek73 -h       Show all available command-line options
+
+Supported startup options:
+    -enemies N             Number of enemy ships (1-9, 0 = random)
+    -player-class XX       Player ship class abbreviation (default CA)
+    -enemy-class XX        Enemy ship class abbreviation (default CA)
+    -race NAME             Enemy race name prefix (default random)
+    -allow-silly-race      Include Monty Python race in random selection
+    -ship-name NAME        Player ship name (default random Federation ship)
 
 Gameplay Instructions / Command Reference
 ------------------------------------------
