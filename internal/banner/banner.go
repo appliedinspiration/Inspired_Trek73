@@ -22,7 +22,10 @@ Dan Gee. It was later corrected, completed, and enhanced by Jeff Okamoto
 and Peter Yee, whose FreeBSD-era revision served as the reference source
 for this modernization.
 
-Copyright 2026 Peter S. Lee (AppliedInspiration.com)
+This implementation Copyright 2026 Peter S. Lee (AppliedInspiration.com)
+All Rights Reserved.
+
+This software is made available under the permissive MIT License.
 
 This program is provided "as is" without warranties or guarantees of any kind.`
 
