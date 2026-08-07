@@ -159,6 +159,19 @@ func TestFinal_SurvivorsReported(t *testing.T) {
 	}
 }
 
+func TestFinal_ListsDestroyedShipsInSurvivorsReport(t *testing.T) {
+	st := newEndgameState()
+	enemy := st.Enemies()[0]
+	enemy.Complement = 0
+	enemy.Status[game.SysDead] = game.FullyDamaged
+
+	msgs := Final(st, game.FinEnemyLose, false)
+	joined := strings.Join(msgs, "\n")
+	if !strings.Contains(joined, "Klathis -- destroyed") {
+		t.Errorf("Final() should list destroyed ships in the survivors report: %v", msgs)
+	}
+}
+
 func TestFinal_NoSurvivors(t *testing.T) {
 	st := newEndgameState()
 	for _, sp := range st.Ships {

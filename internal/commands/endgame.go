@@ -118,17 +118,16 @@ func Final(st *game.State, mesg int, reengageRequested bool) []string {
 
 	msgs = append(msgs, "")
 	var survivors []string
+	liveShips := 0
 	for _, ep := range st.Ships {
-		if ep.IsDead(game.SysDead) {
-			continue
-		}
 		if ep.IsDead(game.SysDead) || ep.Complement <= 0 {
 			survivors = append(survivors, fmt.Sprintf("   %s -- destroyed", ep.Name))
 		} else {
+			liveShips++
 			survivors = append(survivors, fmt.Sprintf("   %s -- %d", ep.Name, ep.Complement))
 		}
 	}
-	if len(survivors) > 0 {
+	if liveShips > 0 {
 		msgs = append(msgs, "Survivors Reported:", "")
 		msgs = append(msgs, survivors...)
 	} else {
