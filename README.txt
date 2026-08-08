@@ -41,7 +41,10 @@ Modernization
 Updated to modern operating systems and hardware by Peter S. Lee,
 AppliedInspiration.com.
 
-Copyright 2026 Peter S. Lee (AppliedInspiration.com)
+This implementation Copyright 2026 Peter S. Lee (AppliedInspiration.com)
+All Rights Reserved.
+
+This software is made available under the permissive MIT License.
 
 This program is provided "as is" without warranties or guarantees of any
 kind.
