@@ -134,7 +134,7 @@ func TestDamageDoesNotDetonateAtFullWarpStrength(t *testing.T) {
 	}
 }
 
-func TestDamageDetonationChanceUsesWarpDamageNotHitStrength(t *testing.T) {
+func TestDamageDetonationChanceUsesWarpDamageAndHitStrength(t *testing.T) {
 	r := NewRand(1)
 	detonated := false
 
@@ -142,13 +142,13 @@ func TestDamageDetonationChanceUsesWarpDamageNotHitStrength(t *testing.T) {
 		fed := newTestShip(0, 0, 0)
 		fed.Shields[0] = Shield{Eff: 0.0, Drain: 0.0}
 		enemy := newTestShip(1, 0, 0)
-		enemy.Status[SysWarp] = 100 // 50% detonation chance on any penetrating hit
+		enemy.Status[SysWarp] = 60
 		enemy.Shields[0] = Shield{Eff: 0.0, Drain: 0.0}
 		enemy.Pods = 1000
 		st := newTestState(fed, enemy)
 		origEnergy := fed.Energy
 
-		messages := Damage(st, 1, enemy, 1, &data.PhaserDamage, DamagePhaser, fed, r)
+		messages := Damage(st, 120, enemy, 1, &data.PhaserDamage, DamagePhaser, fed, r)
 		for _, m := range messages {
 			if m == "++"+enemy.Name+"++ destruct." {
 				detonated = true
@@ -166,7 +166,7 @@ func TestDamageDetonationChanceUsesWarpDamageNotHitStrength(t *testing.T) {
 		}
 	}
 	if !detonated {
-		t.Fatal("expected at least one damage-triggered detonation with 100% warp damage")
+		t.Fatal("expected at least one damage-triggered detonation with warp damage and hit strength")
 	}
 }
 
