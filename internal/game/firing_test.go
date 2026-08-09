@@ -55,11 +55,12 @@ func TestTorpedoHitPositiveAtCloseRange(t *testing.T) {
 
 func TestDamageFullShieldBlocksAllInternalDamage(t *testing.T) {
 	sp := newTestShip(0, 0, 0)
+	st := newTestState(sp)
 	sp.Shields[0] = Shield{Eff: 1.0, Drain: 1.0}
 	origEnergy := sp.Energy
 	r := NewRand(1)
 
-	messages := Damage(100, sp, 1, &data.PhaserDamage, DamagePhaser, sp, r)
+	messages := Damage(st, 100, sp, 1, &data.PhaserDamage, DamagePhaser, sp, r)
 
 	want := "hit 100 on TestShip's shield 1"
 	if len(messages) != 1 || messages[0] != want {
@@ -72,12 +73,13 @@ func TestDamageFullShieldBlocksAllInternalDamage(t *testing.T) {
 
 func TestDamageReducesShieldEfficiencyAndEnergy(t *testing.T) {
 	sp := newTestShip(0, 0, 0)
+	st := newTestState(sp)
 	sp.Shields[0] = Shield{Eff: 0.0, Drain: 0.0} // shield fully down
 	sp.Energy = 1000
 	sp.Pods = 2000
 	r := NewRand(1)
 
-	Damage(50, sp, 1, &data.PhaserDamage, DamagePhaser, sp, r)
+	Damage(st, 50, sp, 1, &data.PhaserDamage, DamagePhaser, sp, r)
 
 	if sp.Energy >= 1000 {
 		t.Errorf("Energy = %v, want reduced from 1000", sp.Energy)
@@ -88,6 +90,7 @@ func TestDamageMarksWeaponDamagedEventually(t *testing.T) {
 	// A large hit with the default weapon divisor should damage at
 	// least one weapon across repeated applications.
 	sp := newTestShip(0, 0, 0)
+	st := newTestState(sp)
 	sp.Shields[0] = Shield{Eff: 0.0, Drain: 0.0}
 	sp.Energy = 100000
 	sp.Pods = 200000
@@ -95,7 +98,7 @@ func TestDamageMarksWeaponDamagedEventually(t *testing.T) {
 
 	anyDamaged := false
 	for i := 0; i < 20; i++ {
-		Damage(500, sp, 1, &data.PhaserDamage, DamagePhaser, sp, r)
+		Damage(st, 500, sp, 1, &data.PhaserDamage, DamagePhaser, sp, r)
 		for _, p := range sp.Phasers {
 			if p.Status&PhaserDamaged != 0 {
 				anyDamaged = true
@@ -109,6 +112,56 @@ func TestDamageMarksWeaponDamagedEventually(t *testing.T) {
 	}
 	if !anyDamaged {
 		t.Error("expected at least one weapon damaged after repeated heavy hits")
+	}
+}
+
+func TestDamageDoesNotDetonateAtFullWarpStrength(t *testing.T) {
+	fed := newTestShip(0, 0, 0)
+	enemy := newTestShip(1, 0, 0)
+	enemy.Status[SysWarp] = 0
+	enemy.Shields[0] = Shield{Eff: 0.0, Drain: 0.0}
+	st := newTestState(fed, enemy)
+	r := NewRand(1)
+
+	messages := Damage(st, 400, enemy, 1, &data.PhaserDamage, DamagePhaser, fed, r)
+	for _, m := range messages {
+		if m == "++"+enemy.Name+"++ destruct." {
+			t.Fatalf("unexpected detonation at full warp strength: %v", messages)
+		}
+	}
+	if enemy.Complement == -1 {
+		t.Fatal("enemy should not have detonated")
+	}
+}
+
+func TestDamageDetonatesWhenWarpAlreadyHeavilyDamaged(t *testing.T) {
+	fed := newTestShip(0, 0, 0)
+	fed.Shields[0] = Shield{Eff: 0.0, Drain: 0.0}
+	enemy := newTestShip(1, 0, 0)
+	enemy.Status[SysWarp] = 75
+	enemy.Shields[0] = Shield{Eff: 0.0, Drain: 0.0}
+	enemy.Pods = 1000
+	st := newTestState(fed, enemy)
+	r := NewRand(1)
+	origEnergy := fed.Energy
+
+	messages := Damage(st, 400, enemy, 1, &data.PhaserDamage, DamagePhaser, fed, r)
+
+	found := false
+	for _, m := range messages {
+		if m == "++"+enemy.Name+"++ destruct." {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected detonation message, got %v", messages)
+	}
+	if enemy.Complement != -1 {
+		t.Fatalf("Complement = %d, want -1", enemy.Complement)
+	}
+	if fed.Energy >= origEnergy {
+		t.Fatalf("fed.Energy = %v, want reduced from %v by blast damage", fed.Energy, origEnergy)
 	}
 }
 

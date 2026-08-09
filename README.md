@@ -127,6 +127,7 @@ Instructions for Future Developers
 -------------------------------------
 - Read prompt_1.md and prompt_1_answers_to_q first; they capture the
   project's guiding constraints and decisions.
+- Read the remaining prompt_*.md files for additional context and design decisions.
 - The original source under References/FreeBSD/trek73 is the
   authoritative gameplay specification. Consult it before changing any
   game mechanic.

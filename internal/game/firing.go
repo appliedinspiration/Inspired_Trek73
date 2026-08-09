@@ -25,7 +25,7 @@ func AntimatterHit(st *State, sourceShip *Ship, sourceObj *SpaceObject, x, y, fu
 		}
 		bear := rectify(bearingTo(sp.X, x, sp.Y, y) - sp.Course)
 		facing := shieldFacingFromAntimatterBearing(bear)
-		messages = append(messages, Damage(hit, sp, facing, &data.AntimatterDamage, DamageAntimatter, fed, r)...)
+		messages = append(messages, Damage(st, hit, sp, facing, &data.AntimatterDamage, DamageAntimatter, fed, r)...)
 	}
 
 	for _, obj := range st.Objects {
@@ -166,7 +166,7 @@ func (h *CombatHooks) PhaserFiring(sp *Ship) {
 		}
 		bearFromTarget := rectify(bearingTo(ep.X, sp.X, ep.Y, sp.Y) - ep.Course)
 		facing := shieldFacingFromPhaserBearing(bearFromTarget)
-		h.messages = append(h.messages, Damage(hit, ep, facing, &data.PhaserDamage, DamagePhaser, fed, h.Rand)...)
+		h.messages = append(h.messages, Damage(h.State, hit, ep, facing, &data.PhaserDamage, DamagePhaser, fed, h.Rand)...)
 	}
 	for _, obj := range h.State.Objects {
 		if obj.Detonated {
@@ -272,7 +272,11 @@ func (h *CombatHooks) TorpedoFiring(sp *Ship) {
 // its remaining phaser/tube charge and antimatter pods as a blast,
 // ported from ship_detonate() in moveships.c/firing.c.
 func (h *CombatHooks) ShipDetonate(sp *Ship) {
-	h.emit(fmt.Sprintf("++%s++ destruct.", sp.Name))
+	shipDetonate(h.State, sp, h.Rand, &h.messages)
+}
+
+func shipDetonate(st *State, sp *Ship, r *Rand, messages *[]string) {
+	*messages = append(*messages, fmt.Sprintf("++%s++ destruct.", sp.Name))
 
 	fuel := 0
 	for i := range sp.Phasers {
@@ -287,7 +291,7 @@ func (h *CombatHooks) ShipDetonate(sp *Ship) {
 	}
 	fuel += int(sp.Pods)
 
-	h.messages = append(h.messages, AntimatterHit(h.State, sp, nil, sp.X, sp.Y, fuel, h.Rand)...)
+	*messages = append(*messages, AntimatterHit(st, sp, nil, sp.X, sp.Y, fuel, r)...)
 
 	for i := 0; i < NumDamageSystems; i++ { // S_NUMSYSTEMS: computer, sensor, probe, warp
 		sp.Status[i] = 100
@@ -321,7 +325,7 @@ func (h *CombatHooks) TorpDetonate(obj *SpaceObject) {
 // ECloakOff forcibly decloaks an enemy ship whose cloaking device has
 // run out of power, ported from e_cloak_off() in enemycom.c. Returns
 // true if the cloaking device was turned off.
-func (h *CombatHooks) ECloakOff(sp, fed *Ship) bool {
+func (h *CombatHooks) ECloakOff(sp, _ *Ship) bool {
 	if sp.Cloaking != CloakOn {
 		return false
 	}

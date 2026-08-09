@@ -12,12 +12,13 @@ import (
 //
 // facing uses the original's 1-based shield numbering (1-4); it is
 // converted to a 0-based index internally.
-func Damage(hit int, ep *Ship, facing int, dam *data.DamageProfile, flag int, fed *Ship, r *Rand) []string {
+func Damage(st *State, hit int, ep *Ship, facing int, dam *data.DamageProfile, flag int, fed *Ship, r *Rand) []string {
 	var messages []string
 	s := facing - 1
 	if hit > 0 {
 		messages = append(messages, fmt.Sprintf("hit %d on %s's shield %d", hit, ep.Name, facing))
 	}
+	warpDamage := ep.Status[SysWarp]
 
 	// If the shield is at 100% efficiency, no damage at all is taken
 	// (except to the shield itself).
@@ -155,6 +156,12 @@ func Damage(hit int, ep *Ship, facing int, dam *data.DamageProfile, flag int, fe
 			case SysComputer:
 				messages = append(messages, CheckLocks(ep, percent, fed, r)...)
 			}
+		}
+	}
+
+	if st != nil && warpDamage >= 75 && f1 > 0 {
+		if r.Randm(400) <= int(f1) {
+			shipDetonate(st, ep, r, &messages)
 		}
 	}
 
