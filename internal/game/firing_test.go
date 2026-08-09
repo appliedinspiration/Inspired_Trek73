@@ -134,34 +134,39 @@ func TestDamageDoesNotDetonateAtFullWarpStrength(t *testing.T) {
 	}
 }
 
-func TestDamageDetonatesWhenWarpAlreadyHeavilyDamaged(t *testing.T) {
-	fed := newTestShip(0, 0, 0)
-	fed.Shields[0] = Shield{Eff: 0.0, Drain: 0.0}
-	enemy := newTestShip(1, 0, 0)
-	enemy.Status[SysWarp] = 75
-	enemy.Shields[0] = Shield{Eff: 0.0, Drain: 0.0}
-	enemy.Pods = 1000
-	st := newTestState(fed, enemy)
+func TestDamageDetonationChanceUsesWarpDamageNotHitStrength(t *testing.T) {
 	r := NewRand(1)
-	origEnergy := fed.Energy
+	detonated := false
 
-	messages := Damage(st, 400, enemy, 1, &data.PhaserDamage, DamagePhaser, fed, r)
+	for i := 0; i < 20; i++ {
+		fed := newTestShip(0, 0, 0)
+		fed.Shields[0] = Shield{Eff: 0.0, Drain: 0.0}
+		enemy := newTestShip(1, 0, 0)
+		enemy.Status[SysWarp] = 100 // 50% detonation chance on any penetrating hit
+		enemy.Shields[0] = Shield{Eff: 0.0, Drain: 0.0}
+		enemy.Pods = 1000
+		st := newTestState(fed, enemy)
+		origEnergy := fed.Energy
 
-	found := false
-	for _, m := range messages {
-		if m == "++"+enemy.Name+"++ destruct." {
-			found = true
+		messages := Damage(st, 1, enemy, 1, &data.PhaserDamage, DamagePhaser, fed, r)
+		for _, m := range messages {
+			if m == "++"+enemy.Name+"++ destruct." {
+				detonated = true
+				if enemy.Complement != -1 {
+					t.Fatalf("Complement = %d, want -1", enemy.Complement)
+				}
+				if fed.Energy >= origEnergy {
+					t.Fatalf("fed.Energy = %v, want reduced from %v by blast damage", fed.Energy, origEnergy)
+				}
+				break
+			}
+		}
+		if detonated {
 			break
 		}
 	}
-	if !found {
-		t.Fatalf("expected detonation message, got %v", messages)
-	}
-	if enemy.Complement != -1 {
-		t.Fatalf("Complement = %d, want -1", enemy.Complement)
-	}
-	if fed.Energy >= origEnergy {
-		t.Fatalf("fed.Energy = %v, want reduced from %v by blast damage", fed.Energy, origEnergy)
+	if !detonated {
+		t.Fatal("expected at least one damage-triggered detonation with 100% warp damage")
 	}
 }
 

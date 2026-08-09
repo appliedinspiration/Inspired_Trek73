@@ -159,8 +159,10 @@ func Damage(st *State, hit int, ep *Ship, facing int, dam *data.DamageProfile, f
 		}
 	}
 
-	if st != nil && warpDamage >= 75 && f1 > 0 {
-		if r.Randm(400) <= int(f1) {
+	// Damage-triggered detonation chance depends only on pre-hit warp
+	// damage: (warp damage percent) / 2 on any penetrating hit.
+	if st != nil && warpDamage > 0 && f1 > 0 {
+		if r.Randm(100) <= warpDamage/2 {
 			shipDetonate(st, ep, r, &messages)
 		}
 	}
