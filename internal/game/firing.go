@@ -276,6 +276,10 @@ func (h *CombatHooks) ShipDetonate(sp *Ship) {
 }
 
 func shipDetonate(st *State, sp *Ship, r *Rand, messages *[]string) {
+	if sp.Complement < 0 || sp.IsDead(SysDead) {
+		return
+	}
+
 	*messages = append(*messages, fmt.Sprintf("++%s++ destruct.", sp.Name))
 
 	fuel := 0
@@ -291,13 +295,14 @@ func shipDetonate(st *State, sp *Ship, r *Rand, messages *[]string) {
 	}
 	fuel += int(sp.Pods)
 
-	*messages = append(*messages, AntimatterHit(st, sp, nil, sp.X, sp.Y, fuel, r)...)
-
 	for i := 0; i < NumDamageSystems; i++ { // S_NUMSYSTEMS: computer, sensor, probe, warp
 		sp.Status[i] = 100
 	}
+	sp.Status[SysDead] = FullyDamaged
 	sp.Cloaking = CloakNone
 	sp.Complement = -1
+
+	*messages = append(*messages, AntimatterHit(st, sp, nil, sp.X, sp.Y, fuel, r)...)
 }
 
 // TorpDetonate detonates a torpedo, probe, or jettisoned engineering

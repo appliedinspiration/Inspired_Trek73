@@ -323,6 +323,26 @@ func TestShipDetonateMarksShipDestroyed(t *testing.T) {
 	}
 }
 
+func TestShipDetonateOnlyOnce(t *testing.T) {
+	sp := newTestShip(0, 0, 0)
+	sp.Name = "Trakka"
+	other := newTestShip(1, 5, 5)
+	st := newTestState(sp, other)
+	hooks := NewCombatHooks(st, NewRand(1))
+
+	hooks.ShipDetonate(sp)
+	hooks.ShipDetonate(sp)
+
+	destructMsgs := 0
+	for _, m := range hooks.TakeMessages() {
+		if m == "++Trakka++ destruct." {
+			destructMsgs++
+		}
+	}
+	if destructMsgs != 1 {
+		t.Fatalf("destruct message count = %d, want 1", destructMsgs)
+	}
+}
 func TestTorpDetonateRecordsDetonatedObject(t *testing.T) {
 	sp := newTestShip(0, 0, 0)
 	obj := &SpaceObject{ID: 5, Type: ObjectTorpedo, From: sp, X: 0, Y: 0, Fuel: 10}
