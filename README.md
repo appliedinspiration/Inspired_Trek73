@@ -52,13 +52,19 @@ kind.
 
 Project Status
 --------------
-This repository is in active development. The current state is an early
-project scaffold: the Go module, CLI entry point, version/build-info
-reporting, and startup/exit banner are implemented. The core game engine
-(ship state, movement, combat, damage, enemy strategy, and command
-handling) has not yet been ported from the original C source. See
-prompt_1.md and prompt_1_answers_to_q for the full project brief and the
-modernization decisions guiding this work.
+This repository is actively under development and is no longer an early
+scaffold. The project now includes a working Go CLI, the classic
+32-command table and text/numeric parser, ship and state management,
+movement, combat resolution, scans, probes, power distribution, damage
+handling, enemy AI, and endgame logic. These mechanics are covered by
+Go tests and are being validated against the original gameplay
+specification in References/FreeBSD/trek73.
+
+Known gaps remain: save-game persistence, some original mission briefing
+and presentation text, and a few polish items around the terminal UI and
+endgame reporting. The rest of the gameplay and systems are already in
+place and under test. See prompt_1.md and prompt_1_answers_to_q for the
+full project brief and the modernization decisions guiding this work.
 
 Build Instructions
 -------------------
@@ -89,11 +95,27 @@ Supported startup options:
 
 Gameplay Instructions / Command Reference
 ------------------------------------------
-The game engine is not yet playable. This section will be completed as
-gameplay is implemented in upcoming phases, and will document the full
-original command set (all of which will remain supported), covering
-phasers, torpedoes, probes, shields, helm, scanning, power distribution,
-surrender/bluff tactics, and self-destruct.
+The core game loop and command system are implemented. The numeric
+command table remains aligned with the original Trek73 command set, and
+all 32 classic commands are represented in the parser and help output.
+
+The most important commands are grouped as follows:
+
+- Weapons and targeting: 1-10 (phasers, torpedoes, locks, rotation,
+  loading, probes)
+- Navigation and status: 11-17 (position reports, pursuit/elude,
+  course changes, damage report, status displays)
+- Combat and tactical actions: 18-29 (scans, power distribution,
+  engineering, bluff/surrender, self-destruct)
+- Session commands: 30-32 (version, save, help/reprint)
+
+Most CLI interaction is text-based and mirrors the original command
+flow. In this port, commands are accepted as both numeric codes and the
+corresponding textual aliases handled by the hand-written parser.
+
+The save-game facility is still intentionally deferred in this version,
+so the command table remains fully supported but the persistence action
+is not yet implemented in the runtime.
 
 Intentional Differences From the Original
 --------------------------------------------
