@@ -22,6 +22,8 @@ type cliOptions struct {
 	ShowVersion        bool
 	ShowHelp           bool
 	EnemyCountProvided bool
+	RestorePath        string
+	SavePath           string
 	Init               game.InitOptions
 }
 
@@ -65,6 +67,8 @@ func parseFlags() cliOptions {
 	flag.BoolVar(&opts.ShowVersion, "version", false, "print version information and exit")
 	flag.BoolVar(&opts.ShowHelp, "help", false, "show available options and exit")
 	flag.BoolVar(&opts.ShowHelp, "h", false, "show available options and exit")
+	flag.StringVar(&opts.RestorePath, "restore", "", "path to a saved game to restore on startup")
+	flag.StringVar(&opts.SavePath, "savefile", "", "default path used by the save command")
 	flag.IntVar(&opts.Init.EnemyCount, "enemies", 0, "number of enemy ships (1-9, 0=random)")
 	flag.StringVar(&opts.Init.PlayerClassAbbr, "player-class", "", "player ship class abbreviation (default: CA)")
 	flag.StringVar(&opts.Init.EnemyClassAbbr, "enemy-class", "", "enemy ship class abbreviation (default: CA)")
@@ -83,38 +87,51 @@ func parseFlags() cliOptions {
 
 func run(opts cliOptions) error {
 	reader := bufio.NewReader(os.Stdin)
-	r := game.NewRandFromTime()
+	var (
+		st *game.State
+		r  *game.Rand
+	)
 
-	crew, err := promptCrewNames(reader, os.Stdout, r)
-	if err != nil {
-		return err
-	}
-
-	initOpts := opts.Init
-	if !opts.EnemyCountProvided {
-		enemyCount, err := promptEnemyVesselCount(reader, os.Stdout)
+	if opts.RestorePath != "" {
+		var err error
+		st, r, err = game.LoadGame(opts.RestorePath)
 		if err != nil {
 			return err
 		}
-		initOpts.EnemyCount = enemyCount
+	} else {
+		r = game.NewRandFromTime()
+		crew, err := promptCrewNames(reader, os.Stdout, r)
+		if err != nil {
+			return err
+		}
+
+		initOpts := opts.Init
+		if !opts.EnemyCountProvided {
+			enemyCount, err := promptEnemyVesselCount(reader, os.Stdout)
+			if err != nil {
+				return err
+			}
+			initOpts.EnemyCount = enemyCount
+		}
+
+		res, err := game.NewGame(initOpts, r)
+		if err != nil {
+			return err
+		}
+
+		st = res.State
+		st.Crew = crew
+
+		printLines(os.Stdout, res.Warnings)
+
+		stardate := formatStardate(time.Now())
+		missionIndex := r.Randm(len(data.MissionBriefings)) - 1
+		printLines(os.Stdout, commands.Mission(st, missionIndex, stardate))
+		printLines(os.Stdout, commands.Alert(st))
 	}
-
-	res, err := game.NewGame(initOpts, r)
-	if err != nil {
-		return err
-	}
-
-	st := res.State
-	st.Crew = crew
-
-	printLines(os.Stdout, res.Warnings)
-
-	stardate := formatStardate(time.Now())
-	missionIndex := r.Randm(len(data.MissionBriefings)) - 1
-	printLines(os.Stdout, commands.Mission(st, missionIndex, stardate))
-	printLines(os.Stdout, commands.Alert(st))
 
 	session := newCLISession(reader, os.Stdout, st, r)
+	session.savePath = opts.SavePath
 	return session.run()
 }
 

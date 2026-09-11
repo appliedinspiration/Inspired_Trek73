@@ -16,11 +16,12 @@ import (
 var errInvalidArguments = errors.New("invalid arguments")
 
 type cliSession struct {
-	reader *bufio.Reader
-	out    io.Writer
-	state  *game.State
-	rand   *game.Rand
-	hooks  *game.CombatHooks
+	reader   *bufio.Reader
+	out      io.Writer
+	state    *game.State
+	rand     *game.Rand
+	hooks    *game.CombatHooks
+	savePath string
 }
 
 func newCLISession(reader *bufio.Reader, out io.Writer, st *game.State, r *game.Rand) *cliSession {
@@ -275,7 +276,17 @@ func (c *cliSession) execute(code int, args []string) (bool, error) {
 		printMessages(c.out, commands.Version())
 		return true, nil
 	case 31:
-		fmt.Fprintln(c.out, "Save game is not yet implemented in this version.")
+		path := c.savePath
+		if path == "" {
+			path = game.DefaultSavePath()
+		}
+		if len(args) > 0 {
+			path = args[0]
+		}
+		if err := game.SaveGame(path, c.state, c.rand); err != nil {
+			return false, err
+		}
+		fmt.Fprintf(c.out, "Game saved to %s.\n", path)
 		return true, nil
 	case 32:
 		printMessages(c.out, commands.Help())

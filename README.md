@@ -56,15 +56,16 @@ This repository is actively under development and is no longer an early
 scaffold. The project now includes a working Go CLI, the classic
 32-command table and text/numeric parser, ship and state management,
 movement, combat resolution, scans, probes, power distribution, damage
-handling, enemy AI, and endgame logic. These mechanics are covered by
-Go tests and are being validated against the original gameplay
-specification in References/FreeBSD/trek73.
+handling, enemy AI, endgame logic, and a portable save/restore system.
+These mechanics are covered by Go tests and are being validated against
+the original gameplay specification in References/FreeBSD/trek73.
 
-Known gaps remain: save-game persistence, some original mission briefing
-and presentation text, and a few polish items around the terminal UI and
-endgame reporting. The rest of the gameplay and systems are already in
-place and under test. See prompt_1.md and prompt_1_answers_to_q for the
-full project brief and the modernization decisions guiding this work.
+The main remaining gaps are a few original mission-briefing and
+presentation details, follow-up polish in the terminal UI, and some
+original endgame/reporting refinements. The rest of the gameplay and
+systems are already in place and under test. See prompt_1.md and
+prompt_1_answers_to_q for the full project brief and the modernization
+decisions guiding this work.
 
 Build Instructions
 -------------------
@@ -81,9 +82,11 @@ Cross-compilation uses the standard Go toolchain, e.g.:
 
 Run Instructions
 -----------------
-    ./inspired_trek73          Run the program
-    ./inspired_trek73 -version Print version and build information
-    ./inspired_trek73 -h       Show all available command-line options
+    ./inspired_trek73                Run the program
+    ./inspired_trek73 -version       Print version and build information
+    ./inspired_trek73 -h             Show all available command-line options
+    ./inspired_trek73 -restore ~/trek73.save
+                                    Restore a previously saved game
 
 Supported startup options:
     -enemies N             Number of enemy ships (1-9, 0 = random)
@@ -92,6 +95,8 @@ Supported startup options:
     -race NAME             Enemy race name prefix (default random)
     -allow-silly-race      Include Monty Python race in random selection
     -ship-name NAME        Player ship name (default random Federation ship)
+    -savefile PATH         Default save path for the in-game save command
+    -restore PATH          Restore a saved game immediately at startup
 
 Gameplay Instructions / Command Reference
 ------------------------------------------
@@ -113,18 +118,39 @@ Most CLI interaction is text-based and mirrors the original command
 flow. In this port, commands are accepted as both numeric codes and the
 corresponding textual aliases handled by the hand-written parser.
 
-The save-game facility is still intentionally deferred in this version,
-so the command table remains fully supported but the persistence action
-is not yet implemented in the runtime.
+Save / Restore
+--------------
+The save-game facility is implemented using a portable, versioned JSON
+snapshot of the current battle state plus the RNG position. This keeps
+the user experience similar to the original C game without preserving
+an opaque process-memory image from one architecture to another.
+
+Examples:
+
+    ./inspired_trek73 -savefile ~/trek73.save
+    ./inspired_trek73 -restore ~/trek73.save
+
+During a session, the save command is also available as command 31:
+
+    31
+    31 ~/my-game.save
+
+The game defaults to $HOME/trek73.save when no save path is provided,
+and the file format includes a version guard so incompatible save files
+are rejected cleanly instead of being loaded blindly.
 
 Intentional Differences From the Original
 --------------------------------------------
 The following differences from the original C implementation are
 intentional and are expected to remain as the project progresses:
 
-- The save-game format and custom ship-class file format will be
-  replaced with portable, explicit formats. The logical content of the
-  original data (ship stats, race data, etc.) will be preserved.
+- The save-game format is a portable, explicit snapshot format rather
+  than the original raw memory-image save. The logical content of the
+  original data (ship stats, race data, etc.) is preserved and verified
+  with a version guard.
+- The custom ship-class file format will be replaced with a portable,
+  explicit format. The logical content of the original data (ship stats,
+  race data, etc.) will be preserved.
 - The optional natural-language command parser (originally implemented
   with lex/yacc) will be replaced with a simpler hand-written text
   parser. All original numeric command codes remain supported.
