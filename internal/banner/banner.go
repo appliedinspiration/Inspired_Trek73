@@ -26,6 +26,7 @@ This implementation Copyright 2026 Peter S. Lee (AppliedInspiration.com)
 All Rights Reserved.
 
 This software is made available under the permissive MIT License.
+The full source code is available at https://github.com/appliedinspiration/Inspired_Trek73
 
 This program is provided "as is" without warranties or guarantees of any kind.`
 
