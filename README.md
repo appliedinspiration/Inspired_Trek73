@@ -73,14 +73,19 @@ Build Instructions
 -------------------
 Requirements: Go 1.23 or later (no third-party dependencies).
 
+For a local build:
+
     go build -o inspired_trek73 ./cmd/inspired_trek73        (Linux/macOS)
     go build -o inspired_trek73.exe ./cmd/inspired_trek73    (Windows)
 
-Cross-compilation uses the standard Go toolchain, e.g.:
+For release builds, run this in Windows PowerShell from the project root (or
+invoke the script by its full path from another directory):
 
-    GOOS=linux   GOARCH=amd64 go build -o inspired_trek73        ./cmd/inspired_trek73
-    GOOS=darwin  GOARCH=arm64 go build -o inspired_trek73        ./cmd/inspired_trek73
-    GOOS=windows GOARCH=amd64 go build -o inspired_trek73.exe    ./cmd/inspired_trek73
+    .\scripts\build-release.ps1 -Version 1.0.0
+
+The script writes all six binaries to `dist\`: Windows amd64; Linux amd64,
+arm64, and armv7 (32-bit Raspberry Pi); and macOS amd64 and arm64. If
+`-Version` is omitted, the embedded version is `dev`.
 
 Run Instructions
 -----------------
@@ -188,4 +193,3 @@ Instructions for Future Developers
   separated.
 - Do not add third-party dependencies without first documenting why one
   is needed and getting approval.
-

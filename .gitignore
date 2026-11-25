@@ -22,6 +22,9 @@ profile.cov
 /inspired_trek73_linux
 /inspired_trek73_mac
 
+# Release builds
+/dist/
+
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
